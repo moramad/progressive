@@ -1,25 +1,22 @@
 ---
-- name: Install nginx
-  hosts: web
-  become: true
+- hosts: all
+  become: yes
 
   tasks:
-  - name: Add epel-release repo
+  - name: Ensure chrony (for time synchronization) is installed.
     yum:
-      name: epel-release
+      name: chrony
       state: present
 
-  - name: Install nginx
-    yum:
-      name: nginx
-      state: present
-
-  - name: Insert Index Page
-    template:
-      src: index.html
-      dest: /usr/share/nginx/html/index.html
-
-  - name: Start NGiNX
+  - name: Ensure chrony is running.
     service:
-      name: nginx
+      name: chronyd
       state: started
+      enabled: yes
+
+# The same as the above play, but in super-compact form!
+- hosts: all
+  become: yes
+  tasks:
+  - yum: name=chrony state=present
+  - service: name=chronyd state=started enabled=yes
