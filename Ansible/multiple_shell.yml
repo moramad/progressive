@@ -5,4 +5,5 @@
       shell: "{{ item }}"
       with_items:
         - echo "hello"
-        - echo "hello2"
+        - date
+        - ls
