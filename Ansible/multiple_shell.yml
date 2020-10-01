@@ -2,11 +2,7 @@
   hosts: all
   tasks:
     - name: "Exec items"
-      shell: "{{ item }}"
-      with_items:
-        - echo "hello"
-        - date
-        - ls
+      command: date  
       register: shell_result
     - debug:
         var: shell_result.stdout_lines
