@@ -96,7 +96,7 @@ do
         MQTT_RESULT=$(mosquitto_sub -h $HOST -u $USERNAME -P $PASSWORD -t $TOPIC/$VCTRLID -C 1 -W 5)
         if [ -z "$MQTT_RESULT" ]
         then            
-            echo -e "$VASSETID | $VDESC | $VIPADDRIN | MQTT: ${RED}[NOK]${NC}"
+            echo -e "$VASSETID | $VDESC | $VIPADDRIN | MQTT: [${RED}NOK${NC}]"
         else            
             MQTT="1"
             HUM=$(echo $MQTT_RESULT | jq '.SENSOR[0].NVALUE')
@@ -111,7 +111,7 @@ do
     else        
         NINPINGNOK=$((NINPINGNOK+1)) 
 
-        echo -e "$VASSETID | $VDESC | $VIPADDRIN | PING: ${RED}[NOK]${NC}"
+        echo -e "$VASSETID | $VDESC | $VIPADDRIN | PING: [${RED}NOK${NC}]"
         echo $VIPADDRIN >> logs/LIST_INDOOR_DISCONNECT        
     fi                
     echo "$VASSETID,$INDOOR,$OUTDOOR,$MQTT,$CUR,$VOL,$HUM,$TMP1,$TMP2,$TMP3,$TMP4" >> logs/LIST_DATA_AC_ONGOING.csv
