@@ -1,1 +1,5 @@
 bash/iot-ac/logs
+bash/iot-ac/logs/LIST_DATA_AC_ONGOING.csv
+bash/iot-ac/logs/LIST_INDOOR_CONNECT
+bash/iot-ac/logs/LIST_INDOOR_DISCONNECT
+bash/iot-ac/logs/LIST_OUTDOOR_DISCONNECT
