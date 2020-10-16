@@ -31,7 +31,7 @@ USERNAME="admin"
 PASSWORD="ITIOT2019!"
 TOPIC="sensor/#"
 TOPIC="sensor"
-INTERVAL="10"
+INTERVAL="20"
 
 
 
