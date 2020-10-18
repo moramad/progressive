@@ -13,12 +13,14 @@ from datetime import datetime
 import json
 import sys
 import threading
+import csv
 
 NINPINGOK=0
 NINPINGNOK=0
 NOUTPINGOK=0
 NOUTPINGNOK=0
 PING_INTERVAL="5"
+ROWS = []
 
 def initialization_mongo():
     maxSevSelDelay = 1
@@ -57,12 +59,23 @@ def update_document(query,set):
         print("An exception occurred ::", e)
         return False
 
+def csvwrite():
+    global ROWS    
+    FIELDS = ['VASSETID','INDOOR','OUTDOOR','MQTT','CUR','VOL','HUM','TMP1','TMP2','TMP3','TMP4']
+    with open('logs/LIST_DATA_AC.csv','w', newline='', encoding='utf-8') as csvfile:
+        write = csv.writer(csvfile)
+        write.writerow(FIELDS)
+        for ROW in ROWS :
+            write.writerow(ROW)
+
 def service_pinger(AC):
+    global ROWS
     global NINPINGOK
     global NINPINGNOK
     global NOUTPINGOK
-    global NOUTPINGNOK    
+    global NOUTPINGNOK
 
+    ROWAC = []
     INDOOR="0"
     OUTDOOR="0"    
     MQTT="0"
@@ -105,9 +118,11 @@ def service_pinger(AC):
                         
     QUERY_SELECT_UPDATE = { "VASSETID": VASSETID }
     SET_VALUE_UPDATE = { "$set": { "INDOOR": INDOOR, "OUTDOOR": OUTDOOR, "DUPDATE": DUPDATE } }     
-    update_document(QUERY_SELECT_UPDATE, SET_VALUE_UPDATE)   
+    update_document(QUERY_SELECT_UPDATE, SET_VALUE_UPDATE)
+    ROWAC.extend((VASSETID,INDOOR,OUTDOOR,MQTT,CUR,VOL,HUM,TMP1,TMP2,TMP3,TMP4))    
+    ROWS.append(ROWAC)
 
-def main():    
+def main():        
     print("===============================")
     print(datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
     print("===============================")
@@ -116,7 +131,7 @@ def main():
         # QUERY_SELECT_DATA = { "VASSETID" : { "$regex": "^ACO" } }
         QUERY_SELECT_DATA = {}
         QUERY_RESULT = select_document(QUERY_SELECT_DATA)
-        
+    
         threads = []
         for AC in QUERY_RESULT:  
             thr = threading.Thread(target=service_pinger, args=(AC,))
@@ -125,6 +140,8 @@ def main():
         
         for thr in threads:
             thr.join()
+
+        csvwrite()
 
         print("===============================")
         print("TOTAL : {} Indoor Connected".format(NINPINGOK))
