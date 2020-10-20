@@ -101,9 +101,9 @@ def service_pinger(AC):
 
     VASSETID = AC['VASSETID']
     VDESC = AC['VDESC']
-    VAREAIN = AC['VAREAIN']
-    VAREAOUT = AC['VAREAOUT']
-    VCTRLID = AC['VCTRLID']
+    # VAREAIN = AC['VAREAIN']
+    # VAREAOUT = AC['VAREAOUT']
+    # VCTRLID = AC['VCTRLID']
     VIPADDRIN = AC['VIPADDRIN']
     VIPADDROUT = AC['VIPADDROUT']   
     DUPDATE = AC['last']['DUPDATE']     
