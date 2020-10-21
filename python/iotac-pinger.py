@@ -2,12 +2,14 @@
 
 ###################################
 # Feature Update : 
-#   Nyimpan Output to MongoDB
 #   Get Data from mosquitto
+#   Set Historical Data
 ###################################
-from pymongo import MongoClient
-from pymongo import errors
+from influxdb import InfluxDBClient
+from influxdb.client import InfluxDBClientError
+from pymongo import MongoClient, errors
 import subprocess
+import platform
 from datetime import datetime
 import json
 import sys
@@ -19,17 +21,51 @@ NINPINGOK=0
 NINPINGNOK=0
 NOUTPINGOK=0
 NOUTPINGNOK=0
-PING_INTERVAL="5"
 ROWS = []
-LIST_DATA_AC_PATH = 'logs/LIST_DATA_AC.csv'
+
+PING_INTERVAL="10"
+LIST_DATA_AC_PATH = '/github/progressive/python/logs/LIST_DATA_AC.csv'
 LIST_DATA_AC_COMPLETE_PATH = '/DRIVE-C/Users/mochamad/OneDrive - PT Astra Honda Motor/Notebooks/SYNC2LINUX/LIST_DATA_AC.csv'
+OS = platform.system()
+
+def initialization_influx():    
+    INFLUX_HOST='t11317'
+    INFLUX_PORT='8086'
+    INFLUX_USERNAME='admin'
+    INFLUX_PASSWORD='ITIOT2019!'
+    INFLUX_DB='AHMITIOT'
+
+    global SERIES
+    try:
+        if OS == 'Linux' :
+            SERIES = InfluxDBClient(INFLUX_HOST, INFLUX_PORT, INFLUX_USERNAME, INFLUX_PASSWORD)
+        else :
+            # windows kalau beda -->
+            SERIES = InfluxDBClient(INFLUX_HOST, INFLUX_PORT, INFLUX_USERNAME, INFLUX_PASSWORD)
+        SERIES.switch_database(INFLUX_DB)
+        return True
+    except Exception:
+        print("Cannot connect influxDB!")
+        return False
+
+def select_series(query,bind_params):
+    try:
+        RESULT = SERIES.query(query, bind_params=bind_params)
+        return RESULT
+    except Exception as e:
+        print("An exception occurred ::", e)
+        return False
+    
 
 def initialization_mongo():
     maxSevSelDelay = 1
     
     global COLLECTION
     try:
-        client = MongoClient("mongodb://192.168.0.100:27017/",serverSelectionTimeoutMS=maxSevSelDelay)
+        if OS == 'Linux' :
+            client = MongoClient("mongodb://192.168.56.1:27017/",serverSelectionTimeoutMS=maxSevSelDelay)
+        else:    
+            client = MongoClient("mongodb://localhost:27017/",serverSelectionTimeoutMS=maxSevSelDelay)        
         client.server_info()
         DB = client["DATAIOT"]
         COLLECTION = DB["IOTAC"]        
@@ -39,29 +75,23 @@ def initialization_mongo():
         print(err)
         return False
 
-def is_reacheable(ip):            
-    if subprocess.call('ping -w' + PING_INTERVAL + ' -c1 ' + ip, shell=True, stdout=subprocess.PIPE) :
-        return 0
-    else:
-        return 1
-
 def select_document(query):
     try:
-        result = COLLECTION.find(query)
-        return result
+        RESULT = COLLECTION.find(query)
+        return RESULT
     except Exception as e:
         print("An exception occurred ::", e)
         return False
 
 def update_document(query,set):
     try:
-        COLLECTION.update(query,set)        
+        COLLECTION.update_many(query,set)        
         return True
     except Exception as e:
         print("An exception occurred ::", e)
         return False
 
-def csvwrite(path):
+def write_csv(path):
     global ROWS    
     FIELDS = ['DUPDATE','VASSETID','INDOOR','OUTDOOR','MQTT','CUR','VOL','HUM','TMP1','TMP2','TMP3','TMP4']
 
@@ -74,11 +104,24 @@ def csvwrite(path):
     except Exception as e:
         print("An Error occureed :: ", e)
 
-def copy(src, dest):
+def copy_file(src, dest):
     try:
         copyfile(src, dest)
-    except Exception as e:
-        print("An Error occureed :: ", e)
+    except Exception :
+        # print("An Error occured :: ", e)
+        print("Path : {} tidak ditemukan!".format(dest))
+
+def is_reacheable(ip):            
+    if OS == 'Linux' :
+        if subprocess.call('ping -w ' + PING_INTERVAL + ' -c 1 ' + ip, shell=True, stdout=subprocess.PIPE) :
+            return False
+        else:
+            return True
+    else :
+        if subprocess.call('ping -w ' + PING_INTERVAL*4000 + ' -n 1 ' + ip, shell=True, stdout=subprocess.PIPE) :
+            return False
+        else:
+            return True
 
 def service_pinger(AC):
     global ROWS
@@ -101,16 +144,16 @@ def service_pinger(AC):
 
     VASSETID = AC['VASSETID']
     VDESC = AC['VDESC']
-    # VAREAIN = AC['VAREAIN']
-    # VAREAOUT = AC['VAREAOUT']
-    # VCTRLID = AC['VCTRLID']
+    VAREAIN = AC['VAREAIN']
+    VAREAOUT = AC['VAREAOUT']
+    VCTRLID = AC['VCTRLID']
     VIPADDRIN = AC['VIPADDRIN']
     VIPADDROUT = AC['VIPADDROUT']   
     DUPDATE = AC['last']['DUPDATE']     
     
     PING_RESULT_IN = is_reacheable(VIPADDRIN)    
                 
-    if PING_RESULT_IN == 1 :
+    if PING_RESULT_IN :
         NINPINGOK+=1
         INDOOR = "1"
         DUPDATE = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
@@ -118,7 +161,7 @@ def service_pinger(AC):
             OUTDOOR = "1"
         else:
             PING_RESULT_OUT = is_reacheable(VIPADDROUT)
-            if PING_RESULT_OUT == 1 :
+            if PING_RESULT_OUT :
                 NOUTPINGOK+=1
                 OUTDOOR="1"
             else:
@@ -127,7 +170,14 @@ def service_pinger(AC):
         NINPINGNOK+=1
         NOUTPINGNOK+=1
         print("{} | {} | {} | PING: NOK".format(VASSETID,VDESC,VIPADDRIN))                    
-                            
+    
+    bind_params = {'VASSETID': VASSETID}    
+    # RESULT_INFLUX = select_series('SELECT NRUNHOUR,DMODI FROM "AHMITIOT_DTLASSTACS" WHERE VASSETID = \'{}\''.format(VASSETID))    
+    RESULT_INFLUX = select_series('SELECT NRUNHOUR,DMODI FROM "AHMITIOT_DTLASSTACS" WHERE VASSETID=$VASSETID',bind_params)
+    for measurement in RESULT_INFLUX.get_points(measurement='AHMITIOT_DTLASSTACS'):        
+        NRUNHOUR = str(round(measurement['NRUNHOUR'] / 3600,2))
+        DMODI    = measurement['DMODI']        
+
     QUERY_SELECT_UPDATE = { "VASSETID": VASSETID }
     SET_VALUE_UPDATE = { 
         "$set": { 
@@ -143,6 +193,10 @@ def service_pinger(AC):
                 'TMP2': TMP2,
                 'TMP3': TMP3,
                 'TMP4': TMP4
+            },
+            "trend" : {
+                'NRUNHOUR' : NRUNHOUR,
+                'DMODI' : DMODI
             }
         } 
     }     
@@ -154,10 +208,13 @@ def main():
     print("===============================")
     print(datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
     print("===============================")
-    result = initialization_mongo()
-    if result == True :
-        QUERY_SELECT_DATA = { "VASSETID" : { "$regex": "^SIM" } }
-        # QUERY_SELECT_DATA = {}
+    CONNECT_IOT = is_reacheable('172.24.24.1')      
+    CONNECT_INFLUX = initialization_influx()
+    CONNECT_MONGO = initialization_mongo()
+    if CONNECT_IOT == True and CONNECT_MONGO == True and CONNECT_INFLUX == True:
+        # QUERY_SELECT_DATA = { "VASSETID" : { "$regex": "^SIM" } }
+        QUERY_SELECT_DATA = { "VASSETID" : { "$regex": "^ACO" } }
+        # QUERY_SELECT_DATA = { "VASSETID" : { "$regex": "ACO.P1.A4" } }
         QUERY_RESULT = select_document(QUERY_SELECT_DATA)
     
         threads = []
@@ -169,8 +226,8 @@ def main():
         for thr in threads:
             thr.join()
 
-        csvwrite(LIST_DATA_AC_PATH)
-        copy(LIST_DATA_AC_PATH,LIST_DATA_AC_COMPLETE_PATH)
+        write_csv(LIST_DATA_AC_PATH)
+        copy_file(LIST_DATA_AC_PATH,LIST_DATA_AC_COMPLETE_PATH)
 
         print("===============================")
         print("TOTAL : {} Indoor Connected".format(NINPINGOK))
@@ -178,6 +235,12 @@ def main():
         print(datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
         print("===============================")
     else :
+        if not CONNECT_IOT :
+            print("Application Stopped. because cannot connect IoT Network")
+        elif not CONNECT_MONGO:
+            print("Application Stopped. because cannot connect MongoDB")
+        elif not CONNECT_INFLUX:
+            print("Application Stopped. because cannot connect InfluxDB")
         sys.exit()    
 
 if __name__ == '__main__':
