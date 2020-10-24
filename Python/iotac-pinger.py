@@ -190,9 +190,6 @@ def service_pinger(AC):
         print("{} | {} | {} | {} | PING: NOK".format(COUNTNUM, VASSETID, VDESC,
                                                      VIPADDRIN))
     bind_params = {'VASSETID': VASSETID}
-    # RESULT_INFLUX = select_series('SELECT NRUNHOUR,DMODI FROM
-    #                               "AHMITIOT_DTLASSTACS"
-    #                                WHERE VASSETID = \'{}\''.format(VASSETID))
     RESULT_INFLUX = select_series('''SELECT NRUNHOUR, DMODI FROM
                                   "AHMITIOT_DTLASSTACS" WHERE
                                   VASSETID=$VASSETID''', bind_params)
