@@ -1,0 +1,23 @@
+version: '3'
+services:
+    server:
+        build:
+            dockerfile: Dockerfile
+            context: ./server
+        volumes:
+            - /app/node_modules
+            - ./server:/app
+    nginx:
+        restart: always
+        build:
+          dockerfile: Dockerfile
+          context: ./controller
+        ports:
+          - '5000:80'
+    client:
+        build:
+            dockerfile: Dockerfile
+            context: ./client
+        volumes:
+            - /app/node_modules
+            - ./client:/app

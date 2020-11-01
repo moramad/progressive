@@ -1,0 +1,6 @@
+{
+  "registry.terraform.io/terraform-providers/docker": {
+    "hash": "h1:979cJqtkc8Puoye7jaUpfyKss+ohxTwmr0WQu+R/UwM=",
+    "version": "2.7.2"
+  }
+}
