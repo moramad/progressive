@@ -1,15 +1,9 @@
 ---
-  - hosts: all
-  
-    vars:
-      my_color_choice: blue
-  
+  - hosts: localhost
+    connection: local
     tasks:
-      - name: "Verify {{ my_color_choice }} is a form of blue."
-        assert:
-          that: my_color_choice is local.colors.blue
-  
-      - name: "Verify yellow is not a form of blue."
-        assert:
-          that: "'yellow' is not local.colors.blue"
-  
+    - name: "Exec items"
+      command: pwd  
+      register: shell_result
+    - debug:
+        var: shell_result.stdout_lines

@@ -21,6 +21,8 @@ NOUTPINGOK = 0
 NOUTPINGNOK = 0
 COUNTNUM = 0
 ROWS = []
+SERIES = ""
+COLLECTION = ""
 
 PING_INTERVAL = "10"
 LIST_DATA_AC_PATH = '/github/progressive/python/logs/LIST_DATA_AC.csv'
