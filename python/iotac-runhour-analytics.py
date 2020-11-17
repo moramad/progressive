@@ -9,7 +9,7 @@ import sys
 import threading
 import csv
 from shutil import copyfile
-
+ 
 LIST_AVGRUNHOUR_AC_PATH = 'logs/LIST_AVGRUNHOUR_AC.csv'
 LIST_DAILYRUNHOUR_AC_PATH = 'logs/LIST_DAILYRUNHOUR_AC.csv'
 LIST_LASTRUNHOUR_AC_PATH = 'logs/LIST_LASTRUNHOUR_AC.csv'
