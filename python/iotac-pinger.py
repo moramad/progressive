@@ -25,9 +25,8 @@ SERIES = ""
 COLLECTION = ""
 
 PING_INTERVAL = "10"
-LIST_DATA_AC_PATH = '/github/progressive/python/logs/LIST_DATA_AC.csv'
-LIST_DATA_AC_COMPLETE_PATH = '/DRIVE-C/Users/mochamad/OneDrive - \
-    PT Astra Honda Motor/Notebooks/SYNC2LINUX/LIST_DATA_AC.csv'
+LIST_DATA_AC_PATH = 'logs/LIST_DATA_AC.csv'
+LIST_DATA_AC_COMPLETE_PATH = '/mnt/c/Users/mochamad/OneDrive - PT Astra Honda Motor/Notebooks/SYNC2LINUX/LIST_DATA_AC.csv'
 OS = platform.system()
 
 
@@ -66,13 +65,9 @@ def select_series(query, bind_params):
 def initialization_mongo():
     maxSevSelDelay = 1
     global COLLECTION
-    try:
-        if OS == 'Linux':
-            client = MongoClient("mongodb://192.168.56.1:27017/",
-                                 serverSelectionTimeoutMS=maxSevSelDelay)
-        else:
-            client = MongoClient("mongodb://localhost:27017/",
-                                 serverSelectionTimeoutMS=maxSevSelDelay)
+    try:        
+        client = MongoClient("mongodb://localhost:27017/",
+                            serverSelectionTimeoutMS=maxSevSelDelay)
         client.server_info()
         DB = client["DATAIOT"]
         COLLECTION = DB["IOTAC"]

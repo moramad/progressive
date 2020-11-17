@@ -1,4 +1,3 @@
-
 from influxdb import InfluxDBClient
 from influxdb.client import InfluxDBClientError
 from pymongo import MongoClient, errors
@@ -14,6 +13,11 @@ LIST_AVGRUNHOUR_AC_PATH = 'logs/LIST_AVGRUNHOUR_AC.csv'
 LIST_DAILYRUNHOUR_AC_PATH = 'logs/LIST_DAILYRUNHOUR_AC.csv'
 LIST_LASTRUNHOUR_AC_PATH = 'logs/LIST_LASTRUNHOUR_AC.csv'
 LIST_LASTMAINTENANCE_AC_PATH = 'logs/LIST_LASTMAINTENANCE_AC.csv'
+
+LIST_AVGRUNHOUR_AC_COMPLETE_PATH = '/mnt/c/Users/mochamad/OneDrive - PT Astra Honda Motor/Notebooks/SYNC2LINUX/LIST_AVGRUNHOUR_AC.csv'
+LIST_DAILYRUNHOUR_AC_COMPLETE_PATH = '/mnt/c/Users/mochamad/OneDrive - PT Astra Honda Motor/Notebooks/SYNC2LINUX/LIST_DAILYRUNHOUR_AC.csv'
+LIST_LASTRUNHOUR_AC_COMPLETE_PATH = '/mnt/c/Users/mochamad/OneDrive - PT Astra Honda Motor/Notebooks/SYNC2LINUX/LIST_LASTRUNHOUR_AC.csv'
+LIST_LASTMAINTENANCE_AC_COMPLETE_PATH = '/mnt/c/Users/mochamad/OneDrive - PT Astra Honda Motor/Notebooks/SYNC2LINUX/LIST_LASTMAINTENANCE_AC.csv'
 
 ROW_AVGRUNHOUR = []
 ROW_RUNHOURDAY = []
@@ -36,9 +40,9 @@ def initialization_influx():
     global SERIES
     try:
         if OS == 'Linux':
-            # SERIES = InfluxDBClient(INFLUX_HOST, INFLUX_PORT, INFLUX_USERNAME,
-            #                         INFLUX_PASSWORD)
-            SERIES = InfluxDBClient(INFLUX_HOST, INFLUX_PORT)
+            SERIES = InfluxDBClient(INFLUX_HOST, INFLUX_PORT, INFLUX_USERNAME,
+                                    INFLUX_PASSWORD)
+            # SERIES = InfluxDBClient(INFLUX_HOST, INFLUX_PORT)
         else:
             # windows kalau beda -->
             SERIES = InfluxDBClient(INFLUX_HOST, INFLUX_PORT)
@@ -66,7 +70,7 @@ def initialization_mongo():
     global COLLECTION
     try:
         if OS == 'Linux':
-            client = MongoClient("mongodb://192.168.56.1:27017/",
+            client = MongoClient("mongodb://localhost:27017/",
                                  serverSelectionTimeoutMS=maxSevSelDelay)
         else:
             client = MongoClient("mongodb://localhost:27017/",
@@ -107,6 +111,13 @@ def write_csv(path, rows, fields):
     except Exception as e:
         print("An Error occureed :: ", e)
 
+def copy_file(src, dest):
+    try:
+        copyfile(src, dest)
+    except Exception:
+        # print("An Error occured :: ", e)
+        print("Path : {} tidak ditemukan!".format(dest))
+
 def service_maintenance(AC):
     global ROW_LASTMAINTENANCE
     ROWS_LASTMAINTENANCE = []    
@@ -128,6 +139,8 @@ def service_maintenance(AC):
 
 def service_lastrunhour(AC):    
     global ROW_LASTRUNHOUR
+    global COUNT
+
     ROWS_LASTRUNHOUR = []
 
     VASSETID = AC['VASSETID']    
@@ -135,11 +148,12 @@ def service_lastrunhour(AC):
     QUERY = f'''SELECT last(NRUNHOUR) AS LASTRUNHOUR, VASSETID, time 
                 FROM "AHMITIOT_TXNASSTACS"                
                 WHERE VASSETID = \'{VASSETID}\' 
-                AND time >= now() - 15m tz(\'Asia/Jakarta\')'''           
+                AND time >= now() - 5m tz(\'Asia/Jakarta\')'''           
     results = select_series(QUERY) 
 
     LASTRUNHOUR = 0
-    for measurement in results.get_points():        
+    for measurement in results.get_points():    
+        COUNT+=1    
         LASTRUNHOUR = measurement['LASTRUNHOUR']
         TIME = measurement['time']                                
         if LASTRUNHOUR is not None :            
@@ -148,8 +162,7 @@ def service_lastrunhour(AC):
         # print (f"{VASSETID} | {LASTRUNHOUR:.2f}")        
     
 
-def service_avgrunhour(AC):
-    global COUNT
+def service_avgrunhour(AC):    
     global ROW_AVGRUNHOUR
     ROWS_AVGRUNHOUR = []
 
@@ -172,8 +185,7 @@ def service_avgrunhour(AC):
     results = select_series(QUERY) 
 
     NAVGRUNHOURDAY=0
-    for measurement in results.get_points():
-        COUNT+=1        
+    for measurement in results.get_points():         
         NAVGRUNHOURDAY = measurement['NAVGRUNHOURDAY']
         # TIME = measurement['time']                                
         if NAVGRUNHOURDAY is None :
@@ -242,6 +254,11 @@ def main():
         ROW_LASTMAINTENANCE = sorted(ROW_LASTMAINTENANCE, key = lambda x:(x[0]))
         FIELDS = ['VASSETID','NLSTHOUR','NLSTMTC','NVALUE','VPMID']
         write_csv(LIST_LASTMAINTENANCE_AC_PATH,ROW_LASTMAINTENANCE,FIELDS)
+
+        copy_file(LIST_DAILYRUNHOUR_AC_PATH, LIST_DAILYRUNHOUR_AC_COMPLETE_PATH)
+        copy_file(LIST_AVGRUNHOUR_AC_PATH, LIST_AVGRUNHOUR_AC_COMPLETE_PATH)
+        copy_file(LIST_LASTRUNHOUR_AC_PATH, LIST_LASTRUNHOUR_AC_COMPLETE_PATH)
+        copy_file(LIST_LASTMAINTENANCE_AC_PATH, LIST_LASTMAINTENANCE_AC_COMPLETE_PATH)
         
 
 if __name__ == '__main__':
