@@ -233,7 +233,7 @@ def main():
     print("===============================")
     print(datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
     print("===============================")
-    CONNECT_IOT = is_reacheable('172.24.24.1')
+    CONNECT_IOT = is_reacheable('172.24.24.21')    
     CONNECT_INFLUX = initialization_influx()
     CONNECT_MONGO = initialization_mongo()
     if CONNECT_IOT and CONNECT_MONGO and CONNECT_INFLUX:
