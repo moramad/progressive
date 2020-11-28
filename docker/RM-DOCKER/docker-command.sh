@@ -45,5 +45,5 @@ docker run -it --rm --name ansible -v ${pwd}:/ansible centos-ansible:1.0 ansible
 docker run -it --rm --name ansible centos-ansible:1.0 /bin/sh
 
 # Jenkins
-docker run -d --name jenkins -v jenkins_home:/var/jenkins_home -p 8080:8080 -p 50000:50000 jenkins/jenkins:lts
+docker run -d --name jenkins -v ${pwd}/jenkins_home:/var/jenkins_home -p 8080:8080 -p 50000:50000 jenkins/jenkins:lts
 

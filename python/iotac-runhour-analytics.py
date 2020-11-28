@@ -120,6 +120,8 @@ def copy_file(src, dest):
 
 def service_maintenance(AC):
     global ROW_LASTMAINTENANCE
+
+    DMODI = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
     ROWS_LASTMAINTENANCE = []    
     VASSETID = AC['VASSETID']
     QUERY = f''' SELECT NLSTHOUR, NLSTMTC, NVALUE, VASSETID, VPMID 
@@ -131,11 +133,24 @@ def service_maintenance(AC):
         NLSTHOUR = measurement['NLSTHOUR']
         NLSTMTC = measurement['NLSTMTC']
         NVALUE = measurement['NVALUE']
-        VPMID = measurement['VPMID']
+        VPMID = measurement['VPMID']        
                                         
         if NLSTHOUR is not None and NLSTMTC is not None:            
             ROWS_LASTMAINTENANCE.extend((VASSETID, NLSTHOUR, NLSTMTC, NVALUE, VPMID))
             ROW_LASTMAINTENANCE.append(ROWS_LASTMAINTENANCE)
+    
+    QUERY_SELECT_UPDATE = {"VASSETID": VASSETID}
+    SET_VALUE_UPDATE = {
+        "$set": {            
+            "mtc": {
+                'NRUNHOUR': NLSTHOUR,
+                'NLSTMTC' : NLSTMTC,
+                'NVALUE' : NVALUE,
+                'DMODI': DMODI
+            }
+        }
+    }
+    update_document(QUERY_SELECT_UPDATE, SET_VALUE_UPDATE)
 
 def service_lastrunhour(AC):    
     global ROW_LASTRUNHOUR
@@ -148,7 +163,7 @@ def service_lastrunhour(AC):
     QUERY = f'''SELECT last(NRUNHOUR) AS LASTRUNHOUR, VASSETID, time 
                 FROM "AHMITIOT_TXNASSTACS"                
                 WHERE VASSETID = \'{VASSETID}\' 
-                AND time >= now() - 5m tz(\'Asia/Jakarta\')'''           
+                AND time >= now() - 1w tz(\'Asia/Jakarta\')'''           
     results = select_series(QUERY) 
 
     LASTRUNHOUR = 0
@@ -159,7 +174,7 @@ def service_lastrunhour(AC):
         if LASTRUNHOUR is not None :            
             ROWS_LASTRUNHOUR.extend((TIME, VASSETID, LASTRUNHOUR))
             ROW_LASTRUNHOUR.append(ROWS_LASTRUNHOUR)
-        # print (f"{VASSETID} | {LASTRUNHOUR:.2f}")        
+        print (f"{VASSETID} | {LASTRUNHOUR:.2f}")        
     
 
 def service_avgrunhour(AC):    
@@ -190,7 +205,7 @@ def service_avgrunhour(AC):
         # TIME = measurement['time']                                
         if NAVGRUNHOURDAY is None :
             NAVGRUNHOURDAY = 0
-        print (f"{VASSETID} | {NAVGRUNHOURDAY:.2f}")        
+        # print (f"{VASSETID} | {NAVGRUNHOURDAY:.2f}")        
     ROWS_AVGRUNHOUR.extend((VASSETID, round(NAVGRUNHOURDAY,3)))
     ROW_AVGRUNHOUR.append(ROWS_AVGRUNHOUR)
 
@@ -216,6 +231,35 @@ def service_dailyrunhour(AC):
             ROW_RUNHOURDAY.append(ROWS_RUNHOURDAY)
         # print (f"{TIME} | {VASSETID} | {NRUNHOURDAY:.2f}")     
 
+def service_all(AC):
+    
+    ROWS_DATA = []    
+    VASSETID = AC['VASSETID']
+    VDESC = AC['VDESC']
+    VAREAIN = AC['VAREAIN']
+    VAREAOUT = AC['VAREAOUT']
+    VCTRLID = AC['VCTRLID']
+    VIPADDRIN = AC['VIPADDRIN']
+    VIPADDROUT = AC['VIPADDROUT']
+    ROWS_DATA.extend(VASSETID, VDESC, VAREAIN, VAREAOUT, VCTRLID, VIPADDRIN, VIPADDROUT)
+
+# QUERY LAST RUNHOUR 
+    QUERYLASTRUNHOUR = f'''SELECT last(NRUNHOUR) AS LASTRUNHOUR, VASSETID, time 
+                FROM "AHMITIOT_TXNASSTACS"                
+                WHERE VASSETID = \'{VASSETID}\' 
+                AND time >= now() - 5m tz(\'Asia/Jakarta\')'''           
+    results = select_series(QUERYLASTRUNHOUR) 
+        
+    for measurement in results.get_points():             
+        LASTRUNHOUR = 0
+        LASTRUNHOUR = measurement['LASTRUNHOUR']                                                
+        if LASTRUNHOUR is not None :             
+            ROWS_DATA.extend(LASTRUNHOUR)           
+            # ROWS_LASTRUNHOUR.extend((TIME, VASSETID, LASTRUNHOUR))
+            # ROW_LASTRUNHOUR.append(ROWS_LASTRUNHOUR)
+        # print (f"{VASSETID} | {LASTRUNHOUR:.2f}")        
+#####################################
+
 def main(): 
     global COUNT, ROW_AVGRUNHOUR, ROW_RUNHOURDAY, ROW_LASTRUNHOUR, ROW_LASTMAINTENANCE
     print("===============================")
@@ -232,7 +276,7 @@ def main():
             service_avgrunhour(AC)
             service_dailyrunhour(AC)
             service_lastrunhour(AC)
-            service_maintenance(AC)
+            service_maintenance(AC)            
         print (f"Total Data : {COUNT}")
 
         # Generate Report Daily Runhour AC

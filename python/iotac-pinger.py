@@ -24,7 +24,7 @@ ROWS = []
 SERIES = ""
 COLLECTION = ""
 
-PING_INTERVAL = "10"
+PING_INTERVAL = "15"
 LIST_DATA_AC_PATH = 'logs/LIST_DATA_AC.csv'
 LIST_DATA_AC_COMPLETE_PATH = '/mnt/c/Users/mochamad/OneDrive - PT Astra Honda Motor/Notebooks/SYNC2LINUX/LIST_DATA_AC.csv'
 OS = platform.system()
@@ -169,8 +169,7 @@ def service_pinger(AC):
         INDOOR = "1"
         DCONNECT = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
         COUNTNUM += 1
-        print("{} | {} | {} | {} | PING: OK".format(COUNTNUM, VASSETID, VDESC,
-                                                    VIPADDRIN))
+        # print("{} | {} | {} | {} | PING: OK".format(COUNTNUM, VASSETID, VDESC, VIPADDRIN))
         if VIPADDROUT == "indoor":
             OUTDOOR = "1"
         else:
