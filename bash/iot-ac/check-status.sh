@@ -22,7 +22,7 @@ else
     printf "[%s]\n" "${grn}OK${end}"
 fi
 
-cd /github/progressive/bash/iot-ac
+cd /home/rama/progressive/bash/iot-ac
 INPUT=reference/LIST_INDOOR.lst
 LOOKUP=reference/LOOKUP_AC_DESC.csv
 
@@ -31,7 +31,7 @@ USERNAME="admin"
 PASSWORD="ITIOT2019!"
 TOPIC="sensor/#"
 TOPIC="sensor"
-INTERVAL="20"
+INTERVAL="10"
 
 NINPINGOK=0
 NINPINGNOK=0
@@ -120,4 +120,4 @@ echo "TOTAL : $NOUTPINGOK Outdoor Connected"
 echo "$(date)"
 echo "==============================="
 
-cp logs/LIST_DATA_AC_ONGOING.csv /DRIVE-C/Users/mochamad/OneDrive\ -\ PT\ Astra\ Honda\ Motor/Notebooks/SYNC2LINUX/LIST_DATA_AC.csv
+cp logs/LIST_DATA_AC_ONGOING.csv /mnt/c/Users/mochamad/OneDrive\ -\ PT\ Astra\ Honda\ Motor/Notebooks/SYNC2LINUX/LIST_DATA_AC.csv

@@ -4,3 +4,9 @@ bash/iot-ac/logs/LIST_INDOOR_CONNECT
 bash/iot-ac/logs/LIST_INDOOR_DISCONNECT
 bash/iot-ac/logs/LIST_OUTDOOR_DISCONNECT
 python/workspace.code-workspace
+python/logs/
+python/logs/LIST_LASTRUNHOUR_AC.csv
+python/logs/LIST_LASTMAINTENANCE_AC.csv
+python/logs/LIST_DAILYRUNHOUR_AC.csv
+python/logs/LIST_AVGRUNHOUR_AC.csv
+python/list_next_maintenance_AC-11-2020.xlsx

@@ -97,8 +97,8 @@ def update_document(query, set):
 
 def write_csv(path):
     global ROWS
-    FIELDS = ['DUPDATE', 'DCONNECT', 'VASSETID', 'INDOOR', 'OUTDOOR', 'MQTT',
-              'CUR', 'VOL', 'HUM', 'TMP1', 'TMP2', 'TMP3', 'TMP4']
+    FIELDS = ['VASSETID', 'INDOOR', 'OUTDOOR', 'MQTT',
+              'CUR', 'VOL', 'HUM', 'TMP1', 'TMP2', 'TMP3', 'TMP4', 'DUPDATE', 'DCONNECT']
 
     try:
         with open(path, 'w', newline='', encoding='utf-8') as csvfile:
@@ -183,8 +183,7 @@ def service_pinger(AC):
         NINPINGNOK += 1
         NOUTPINGNOK += 1
         COUNTNUM += 1
-        print("{} | {} | {} | {} | PING: NOK".format(COUNTNUM, VASSETID, VDESC,
-                                                     VIPADDRIN))
+        print(f"{COUNTNUM} | {VASSETID} | {VDESC} | {VIPADDRIN} | PING: NOK")
     bind_params = {'VASSETID': VASSETID}
     RESULT_INFLUX = select_series('''SELECT NRUNHOUR, DMODI FROM
                                   "AHMITIOT_DTLASSTACS" WHERE
@@ -218,8 +217,8 @@ def service_pinger(AC):
         }
     }
     update_document(QUERY_SELECT_UPDATE, SET_VALUE_UPDATE)
-    ROWAC.extend((DUPDATE, DCONNECT, VASSETID, INDOOR, OUTDOOR, MQTT,
-                  CUR, VOL, HUM, TMP1, TMP2, TMP3, TMP4))
+    ROWAC.extend((VASSETID, INDOOR, OUTDOOR, MQTT,
+                  CUR, VOL, HUM, TMP1, TMP2, TMP3, TMP4, DUPDATE, DCONNECT))
     ROWS.append(ROWAC)
 
 
