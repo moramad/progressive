@@ -7,8 +7,8 @@
 ###################################
 from influxdb import InfluxDBClient
 from pymongo import MongoClient, errors
+import paho.mqtt.client as MQTTClient
 import subprocess
-import platform
 from datetime import datetime
 import sys
 import threading
@@ -23,29 +23,25 @@ COUNTNUM = 0
 ROWS = []
 SERIES = ""
 COLLECTION = ""
+MQTT_CONNECT_STATUS = False   #global variable for the state of the connection
 
 PING_INTERVAL = "15"
 LIST_DATA_AC_PATH = 'logs/LIST_DATA_AC.csv'
 LIST_DATA_AC_COMPLETE_PATH = '/mnt/c/Users/mochamad/OneDrive - PT Astra Honda Motor/Notebooks/SYNC2LINUX/LIST_DATA_AC.csv'
-OS = platform.system()
 
 
 def initialization_influx():
     INFLUX_HOST = '10.9.12.38'
+    INFLUX_HOST = 'localhost'
     INFLUX_PORT = '8086'
     INFLUX_USERNAME = 'admin'
     INFLUX_PASSWORD = 'ITIOT2019!'
     INFLUX_DB = 'AHMITIOT'
 
     global SERIES
-    try:
-        if OS == 'Linux':
-            SERIES = InfluxDBClient(INFLUX_HOST, INFLUX_PORT, INFLUX_USERNAME,
-                                    INFLUX_PASSWORD)
-        else:
-            # windows kalau beda -->
-            SERIES = InfluxDBClient(INFLUX_HOST, INFLUX_PORT, INFLUX_USERNAME,
-                                    INFLUX_PASSWORD)
+    try:        
+        SERIES = InfluxDBClient(INFLUX_HOST, INFLUX_PORT, INFLUX_USERNAME,
+                                INFLUX_PASSWORD)
         SERIES.switch_database(INFLUX_DB)
         return True
     except Exception:
@@ -94,6 +90,36 @@ def update_document(query, set):
         print("An exception occurred ::", e)
         return False
 
+# The callback function of connection
+def on_connect(client, userdata, flags, rc):
+    if rc == 0: 
+        print("Connected to broker") 
+        global MQTT_CONNECT_STATUS                #Use global variable
+        MQTT_CONNECT_STATUS = True                #Signal connection 
+        client.subscribe("rama")         
+    else: 
+        print("Connection failed")
+    
+# The callback function for received message
+def on_message(client, userdata, msg):    
+    # if msg.payload.decode() == "Hello world!":
+    #     print("Yes!")        
+    print ( f"MQTT : {msg.payload}" )
+
+def initialization_mqtt():
+    MQTT_HOST= "test.mosquitto.org"
+    MQTT_PORT = 1883
+    MQTT_USER = "admin"
+    MQTT_PASSWORD = "admin"
+    
+    client = MQTTClient.Client("Python")               #create new instance
+    client.username_pw_set(MQTT_USER, password=MQTT_PASSWORD)    #set username and password
+    client.on_connect= on_connect                      #attach function to callback
+    client.on_message= on_message                      #attach function to callback    
+    client.connect(MQTT_HOST, port=MQTT_PORT)          #connect to broker
+    client.loop_start()
+    return True
+
 
 def write_csv(path):
     global ROWS
@@ -118,20 +144,12 @@ def copy_file(src, dest):
         print("Path : {} tidak ditemukan!".format(dest))
 
 
-def is_reacheable(ip):
-    if OS == 'Linux':
-        if subprocess.call('ping -w ' + PING_INTERVAL + ' -c 1 ' + ip,
-                           shell=True, stdout=subprocess.PIPE):
-            return False
-        else:
-            return True
+def is_reacheable(ip):    
+    if subprocess.call('ping -w ' + PING_INTERVAL + ' -c 1 ' + ip,
+                        shell=True, stdout=subprocess.PIPE):
+        return False
     else:
-        if subprocess.call('ping -w ' + PING_INTERVAL*4000 + ' -n 1 ' + ip,
-                           shell=True, stdout=subprocess.PIPE):
-            return False
-        else:
-            return True
-
+        return True    
 
 def service_pinger(AC):
     global ROWS
@@ -227,11 +245,13 @@ def main():
     print(datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
     print("===============================")
     CONNECT_IOT = is_reacheable('172.24.24.21')    
+    CONNECT_IOT = is_reacheable('8.8.8.8')    
     CONNECT_INFLUX = initialization_influx()
     CONNECT_MONGO = initialization_mongo()
+    CONNECT_MQTT = initialization_mqtt()
     if CONNECT_IOT and CONNECT_MONGO and CONNECT_INFLUX:
-        # QUERY_SELECT_DATA = {"VASSETID": {"$regex": "^SIM"}}
-        QUERY_SELECT_DATA = {"VASSETID": {"$regex": "^ACO"}}
+        QUERY_SELECT_DATA = {"VASSETID": {"$regex": "^SIM"}}
+        # QUERY_SELECT_DATA = {"VASSETID": {"$regex": "^ACO"}}
         # QUERY_SELECT_DATA = {"VASSETID": {"$regex": "ACO.P1.A4.IT"}}
         QUERY_RESULT = select_document(QUERY_SELECT_DATA)
         threads = []
